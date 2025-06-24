@@ -1,6 +1,9 @@
 # Specifies intentionally untracked files to ignore when using Git
 # http://git-scm.com/docs/gitignore
 
+# Android test
+android
+
 *~
 *.sw[mnpcod]
 .tmp
@@ -43,7 +46,7 @@ yarn-error.log
 .settings/
 *.sublime-project
 *.sublime-workspace
-*.vscode
+.vscode
 
 # Visual Studio Code
 .vscode/*
