@@ -15,6 +15,7 @@ import { ELocalStorage } from '../../enum/ELocalStorage.enum';
   selector: 'app-list',
   templateUrl: './list.component.html',
   styleUrls: ['./list.component.scss'],
+  imports: [InputAddItemComponent, InputListItemComponent]
 })
 export class ListComponent {
   public addItem = signal(true);
