@@ -16,16 +16,6 @@ export class AppComponent {
   itemsList!: any[];
   item: any;
 
-  ngOnInit(): void {
-    this.toDoService.initDB();
-    this.toDoService.getAllItems().then((items: any[]) => {
-      this.itemsList = items;
-      console.log("ITEMS:", this.itemsList);
-    }).catch((err: any) => {
-      console.log(err);
-    });
-  }
-
   onSaveItem() {
     if (!this.item?.id) {
       //Creating

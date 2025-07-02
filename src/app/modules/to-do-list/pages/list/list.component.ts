@@ -10,6 +10,7 @@ import { IListItems } from '../../interface/IListItems.interface';
 
 // ENUM
 import { ELocalStorage } from '../../enum/ELocalStorage.enum';
+import { ToDoService } from '../../services/to-do.service';
 
 @Component({
   selector: 'app-list',
@@ -17,22 +18,38 @@ import { ELocalStorage } from '../../enum/ELocalStorage.enum';
   styleUrls: ['./list.component.scss'],
   imports: [InputAddItemComponent, InputListItemComponent]
 })
-export class ListComponent implements OnInit{
+export class ListComponent implements OnInit {
   public addItem = signal(true);
 
-  #setListItems = signal<IListItems[]>(this.#parseItems());
+  #setListItems = signal<IListItems[]>([]);
   public getListItems = this.#setListItems.asReadonly();
 
-  constructor() {
+  constructor(private toDoService: ToDoService) {
 
   }
 
   ngOnInit(): void {
-    
+    this.toDoService.initDB();
+    this.getItems();
+  }
+
+  getItems() {
+    let itemList;
+    this.toDoService.getAllItems().then((items: any[]) => {
+      this.#setListItems.set(items);
+      console.log("ITEMS:", this.getListItems());
+    }).catch((err: any) => {
+      console.log(err);
+    });
+
+    return itemList;
   }
 
   #parseItems() {
-    return JSON.parse(localStorage.getItem(ELocalStorage.MY_LIST) || '[]');
+    const items = this.toDoService.getAllItems();
+    this.#setListItems.set(items);
+
+    return items;
   }
 
   #updateLocalStorage() {
