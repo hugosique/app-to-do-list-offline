@@ -10,7 +10,6 @@ import { IListItems } from '../../interface/IListItems.interface';
 
 // ENUM
 import { ELocalStorage } from '../../enum/ELocalStorage.enum';
-import { ToDoService } from '../../services/to-do.service';
 
 @Component({
   selector: 'app-list',
@@ -18,28 +17,18 @@ import { ToDoService } from '../../services/to-do.service';
   styleUrls: ['./list.component.scss'],
   imports: [InputAddItemComponent, InputListItemComponent]
 })
-export class ListComponent  implements OnInit{
+export class ListComponent implements OnInit{
   public addItem = signal(true);
 
   #setListItems = signal<IListItems[]>(this.#parseItems());
   public getListItems = this.#setListItems.asReadonly();
 
+  constructor() {
 
-  // Offline First
-  itemsList!: any[];
-
-  constructor(private toDoService: ToDoService) {
-
-    this.toDoService.initDB();
   }
 
   ngOnInit(): void {
-    this.toDoService.getAllItems().then((items: any[]) => {
-      this.itemsList = items;
-      console.log("ITEMS:", this.itemsList);
-    }).catch((err: any) => {
-      console.log(err);
-    })
+    
   }
 
   #parseItems() {
