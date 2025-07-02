@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import Swal from 'sweetalert2';
 
 // Components
@@ -10,6 +10,7 @@ import { IListItems } from '../../interface/IListItems.interface';
 
 // ENUM
 import { ELocalStorage } from '../../enum/ELocalStorage.enum';
+import { ToDoService } from '../../services/to-do.service';
 
 @Component({
   selector: 'app-list',
@@ -17,11 +18,29 @@ import { ELocalStorage } from '../../enum/ELocalStorage.enum';
   styleUrls: ['./list.component.scss'],
   imports: [InputAddItemComponent, InputListItemComponent]
 })
-export class ListComponent {
+export class ListComponent  implements OnInit{
   public addItem = signal(true);
 
   #setListItems = signal<IListItems[]>(this.#parseItems());
   public getListItems = this.#setListItems.asReadonly();
+
+
+  // Offline First
+  itemsList!: any[];
+
+  constructor(private toDoService: ToDoService) {
+
+    this.toDoService.initDB();
+  }
+
+  ngOnInit(): void {
+    this.toDoService.getAllItems().then((items: any[]) => {
+      this.itemsList = items;
+      console.log("ITEMS:", this.itemsList);
+    }).catch((err: any) => {
+      console.log(err);
+    })
+  }
 
   #parseItems() {
     return JSON.parse(localStorage.getItem(ELocalStorage.MY_LIST) || '[]');
