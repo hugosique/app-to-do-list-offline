@@ -1,21 +1,21 @@
-@for(item of inputListItems; track item) {
-<label class="input-label-text" [for]="item.id">
+@for(item of inputListItems; track item._id) {
+<label class="input-label-text" [for]="item._id">
   <input
     type="checkbox"
     #inputCheckbox
     [checked]="item.checked"
-    (input)="updateItemCheckbox(item.id, inputCheckbox.checked)"
+    (input)="updateItemCheckbox(item._id, inputCheckbox.checked)"
   />
   <input
     type="text"
     #inputValue
-    [id]="item.id"
+    [id]="item._id"
     [value]="item.value"
     placeholder="Adicione um valor"
     autofocus
-    (input)="updateItemText(item.id, inputValue.value)"
+    (input)="updateItemText(item._id, inputValue.value)"
   />
 
-  <button class="btn btn-danger-circle" title="Deletar item" (click)="deleteItem(item.id)"></button>
+  <button class="btn btn-danger-circle" title="Deletar item" (click)="deleteItem(item._id)"></button>
 </label>
 }

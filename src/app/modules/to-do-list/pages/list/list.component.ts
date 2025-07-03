@@ -8,8 +8,7 @@ import { InputListItemComponent } from '../../components/input-list-item/input-l
 // Interfaces
 import { IListItems } from '../../interface/IListItems.interface';
 
-// ENUM
-import { ELocalStorage } from '../../enum/ELocalStorage.enum';
+// Services
 import { ToDoService } from '../../services/to-do.service';
 
 @Component({
@@ -20,104 +19,62 @@ import { ToDoService } from '../../services/to-do.service';
 })
 export class ListComponent implements OnInit {
   public addItem = signal(true);
-
   #setListItems = signal<IListItems[]>([]);
   public getListItems = this.#setListItems.asReadonly();
 
-  constructor(private toDoService: ToDoService) {
+  constructor(private toDoService: ToDoService) { }
 
-  }
+  async ngOnInit() {
+    await this.toDoService.initDB((doc, deleted) => {
+      this.#setListItems.update((list: IListItems[]) => {
+        const index = list.findIndex((i: IListItems) => i._id === doc._id);
 
-  ngOnInit(): void {
-    this.toDoService.initDB();
-    this.getItems();
-  }
+        if (deleted) {
+          return list.filter((i: IListItems) => i._id !== doc._id)
+        }
 
-  getItems() {
-    let itemList;
-    this.toDoService.getAllItems().then((items: any[]) => {
-      this.#setListItems.set(items);
-      console.log("ITEMS:", this.getListItems());
-    }).catch((err: any) => {
-      console.log(err);
+        if (index !== -1) {
+          const updated = [...list];
+          updated[index] = doc;
+          return updated;
+        }
+
+        return [...list, doc]
+      })
     });
 
-    return itemList;
+    await this.loadItems();
   }
 
-  #parseItems() {
-    const items = this.toDoService.getAllItems();
+  private async loadItems() {
+    const items = await this.toDoService.getAllItems();
     this.#setListItems.set(items);
-
-    return items;
   }
 
-  #updateLocalStorage() {
-    return localStorage.setItem(
-      ELocalStorage.MY_LIST,
-      JSON.stringify(this.#setListItems())
-    );
-  }
-
-  public getInputAndAddItem(value: IListItems) {
-    localStorage.setItem(
-      ELocalStorage.MY_LIST,
-      JSON.stringify([...this.#setListItems(), value])
-    );
-
-    return this.#setListItems.set(this.#parseItems());
+  public async saveItem(value: IListItems) {
+    await this.toDoService.save(value);
   }
 
   public listItemsStage(value: 'pending' | 'completed') {
     return this.getListItems().filter((el: IListItems) => {
-      if (value === 'pending') {
-        return !el.checked;
-      };
-
-      if (value === 'completed') {
-        return el.checked;
-      };
-
-      return el;
+      return value === 'pending' ? !el.checked : el.checked
     });
   }
 
-  public updateItemCheckbox(newItem: { id: string; checked: boolean }) {
-    this.#setListItems.update((oldValue: IListItems[]) => {
-      oldValue.filter(res => {
-        if (res.id === newItem.id) {
-          res.checked = newItem.checked;
-          return res;
-        }
+  public async updateItemCheckbox(newItem: { id: string; checked: boolean }) {
+    const item = this.getListItems().find((i) => i._id === newItem.id);
 
-        return res;
-      });
-
-      return oldValue;
-    });
-
-    return localStorage.setItem('@my-list', JSON.stringify(this.#setListItems()));
+    if (item) await this.toDoService.update({ ...item, checked: newItem.checked }); 
   }
 
-  public updateItemText(newItem: { id: string, value: string }) {
-    this.#setListItems.update((oldValue: IListItems[]) => {
-      oldValue.filter(res => {
-        if (res.id === newItem.id) {
-          res.value = newItem.value;
-          return res;
-        }
+  public async updateItemText(newItem: { id: string, value: string }) {
+    const item = this.getListItems().find((i) => i._id === newItem.id);
 
-        return res;
-      });
-
-      return oldValue;
-    });
-
-    return this.#updateLocalStorage();
+    if (item) await this.toDoService.update({ ...item, value: newItem.value });
   }
 
-  public deleteItem(id: string) {
-    Swal.fire({
+  public async deleteItem(id: string) {
+    const result = await Swal.fire({
       title: "Deletar item?",
       text: "Você não poderá reverter isso!",
       // icon: "warning",
@@ -126,17 +83,16 @@ export class ListComponent implements OnInit {
       // confirmButtonColor: "#3085d6",
       // cancelButtonColor: "#d33",
       confirmButtonText: "Sim, deletar item"
-    }).then((result: any) => {
-      if (result.isConfirmed) {
-        this.#setListItems.update((oldValue: IListItems[]) => {
-          return oldValue.filter(el => {
-            return el.id !== id;
-          });
-        });
-
-        return this.#updateLocalStorage();
-      };
     });
+
+    if (result.isConfirmed) {
+      const currentItems = this.#setListItems();
+      const itemToRemove = currentItems.find(el => el._id === id);
+
+      if (itemToRemove) {
+        await this.toDoService.remove(itemToRemove);
+      }
+    }
   }
 
   public deleteAllItems() {
@@ -148,11 +104,14 @@ export class ListComponent implements OnInit {
       cancelButtonText: "Cancelar",
       // confirmButtonColor: "#3085d6",
       // cancelButtonColor: "#d33",
+      background: '#000',
       confirmButtonText: "Sim, deletar todos"
-    }).then((result: any) => {
+    }).then(async (result: any) => {
       if (result.isConfirmed) {
-        localStorage.removeItem(ELocalStorage.MY_LIST);
-        return this.#setListItems.set(this.#parseItems());
+        const items = this.getListItems();
+        for (const item of items) {
+          await this.toDoService.remove(item);
+        }
       }
     });
   }

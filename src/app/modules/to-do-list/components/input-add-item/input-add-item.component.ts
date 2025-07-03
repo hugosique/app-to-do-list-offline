@@ -13,6 +13,9 @@ import { NgClass } from '@angular/common';
 // Interfaces
 import { IListItems } from '../../interface/IListItems.interface';
 
+// UUID
+import { v4 as uuidv4 } from 'uuid';
+
 @Component({
   selector: 'app-input-add-item',
   templateUrl: './input-add-item.component.html',
@@ -33,11 +36,10 @@ export class InputAddItemComponent {
       this.inputText.nativeElement.value = '';
 
       const currentDate = new Date();
-      const timestamp = currentDate.getTime();
-      const id = `ID${timestamp}`
+      const _id = `ID${uuidv4()}`
 
       this.outputAddListItems.emit({
-        id,
+        _id,
         checked: false,
         value
       });

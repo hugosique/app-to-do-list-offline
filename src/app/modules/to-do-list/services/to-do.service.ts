@@ -11,74 +11,59 @@ import PouchDB from 'pouchdb';
 })
 export class ToDoService {
   localDb: any;
-  listItems!: any[];
+  // listItems!: any[];
+  private changeListener: any;
 
   constructor() { }
 
-  initDB() {
+  initDB(onChange: (doc: IListItems, deleted: boolean) => void) {
     this.localDb = new PouchDB('todo-list');
 
     // Change to variables
-    const remoteDb = new PouchDB('http://localhost:5984/todo-list', {
+    const remoteDb = new PouchDB('http://admin:admin@localhost:5984/todo-list', {
       fetch: (url: string | Request, opts: any) => {
-        const login = 'admin';
-        const password = 'admin';
-        const token = btoa(login + ":" + password);
+        const token = btoa("admin:admin");
         opts.headers.set('Authorization', 'Basic', + token);
         return PouchDB.fetch(url, opts);
       }
     });
 
-    this.localDb.sync(remoteDb, {
-      live: true,
-      retry: false,
-    });
-  }
+    this.localDb.sync(remoteDb, { live: true, retry: false, });
 
-  private findIndex(id: string) {
-    const todoIndex = this.listItems.find(item => item.id === id);
-    return todoIndex;
-  }
-
-  private onDatabaseChange = (change: any) => {
-    const index = this.findIndex(change.id);
-    const item = this.listItems[index];
-
-    if (change.deleted) {
-      if (item) {
-        this.listItems.splice(index, 1);
-      }
-    } else {
-      if (this.listItems && item.id === change.id) {
-        this.listItems[index] = change.doc;
-      } else {
-        this.listItems.splice(index, 0, change.doc);
-      }
+    if (!this.changeListener) {
+      this.changeListener = this.localDb
+        .changes({
+          since: 'now',
+          live: true,
+          include_docs: true,
+        })
+        .on('change', (change: any) => {
+          onChange(change.doc, change.deleted)
+        });
     }
   }
 
   getAllItems() {
-    if (!this.listItems) {
-      return this.localDb.allDocs({ include_docs: true })
-        .then((docs: { rows: [] }) => {
-          this.listItems = docs.rows.map((row: { doc?: any }) => row.doc);
-          this.localDb.changes({ live: true, since: 'now', include_docs: true }).on('change', this.onDatabaseChange);
-          return this.listItems;
-        })
-    } else {
-      return Promise.resolve(this.listItems);
-    }
+    return this.localDb.allDocs({ include_docs: true })
+      .then((docs: { rows: any[] }) => docs.rows.map((row) => row.doc));
   }
 
-  save(item: any) {
+  save(item: IListItems) {
     return this.localDb.post(item);
   }
 
-  update(item: any) {
+  update(item: IListItems) {
     return this.localDb.put(item);
   }
 
-  remove(item: any) {
+  remove(item: IListItems) {
     return this.localDb.remove(item);
+  }
+
+  cancelChanges() {
+    if (this.changeListener) {
+      this.changeListener.cancel();
+      this.changeListener = null;
+    }
   }
 }

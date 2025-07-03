@@ -13,7 +13,7 @@
   } @else {
   <app-input-add-item
     [inputListItems]="getListItems()"
-    (outputAddListItems)="getInputAndAddItem($event)"
+    (outputAddListItems)="saveItem($event)"
   />
   }
 </div>
@@ -21,7 +21,7 @@
 } @else {
 <app-input-add-item
   [inputListItems]="getListItems()"
-  (outputAddListItems)="getInputAndAddItem($event)"
+  (outputAddListItems)="saveItem($event)"
 />
 
 <main class="container">
