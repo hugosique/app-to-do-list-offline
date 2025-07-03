@@ -11,7 +11,6 @@ import PouchDB from 'pouchdb';
 })
 export class ToDoService {
   localDb: any;
-  // listItems!: any[];
   private changeListener: any;
 
   constructor() { }
@@ -28,7 +27,7 @@ export class ToDoService {
       }
     });
 
-    this.localDb.sync(remoteDb, { live: true, retry: false, });
+    this.localDb.sync(remoteDb, { live: true, retry: true, });
 
     if (!this.changeListener) {
       this.changeListener = this.localDb
@@ -39,7 +38,11 @@ export class ToDoService {
         })
         .on('change', (change: any) => {
           onChange(change.doc, change.deleted)
-        });
+        })
+        .on('paused', (err: any) => console.warn('⏸ Pausado', err))
+        .on('active', () => console.log('▶️ Retomando sync'))
+        .on('denied', (err: any) => console.error('🚫 Negado', err))
+        .on('error', (err: any) => console.error('❌ Erro geral de sync', err));
     }
   }
 
